@@ -1,48 +1,530 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Poker 4D - Premium Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokerist 4D - VIP Club</title>
     <style>
-        body { background: #060a12; color: white; font-family: sans-serif; text-align: center; }
-        .chip { padding: 10px; margin: 5px; border-radius: 50%; display: inline-block; background: gold; color: black; font-weight: bold; }
-        #game-area { margin-top: 50px; }
-        button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #ff4500; border: none; color: white; border-radius: 10px; }
+        body {
+            background-color: #060a12;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(220, 38, 38, 0.15), transparent 70%),
+                radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.1), transparent 60%);
+            color: white; font-family: 'Segoe UI', Arial, sans-serif; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden;
+            perspective: 1200px; perspective-origin: 50% 25%;
+        }
+        
+        /* אולם הקזינו המלא ברקע */
+        .casino-wall {
+            position: absolute; top: 0; width: 100%; height: 35%; border-bottom: 4px solid #dc2626;
+            background: linear-gradient(to right, #111827, #1f2937 20%, #111827 40%, #374151 60%, #1f2937 80%, #111827);
+            box-shadow: inset 0 -20px 30px rgba(0,0,0,0.8), 0 0 20px rgba(220, 38, 38, 0.3); z-index: 1;
+        }
+        .casino-carpet {
+            position: absolute; bottom: 0; width: 150%; height: 75%;
+            background: radial-gradient(circle, #111827 25%, #030712); transform: rotateX(70deg); z-index: 1; opacity: 0.9;
+        }
+
+        .bg-table {
+            position: absolute; background: radial-gradient(circle, #064e3b 30%, #022c22);
+            border: 10px solid #1f2937; border-radius: 50%/50%; opacity: 0.2;
+            filter: blur(5px); z-index: 2; transform: rotateX(58deg);
+        }
+        #bg-table-left { width: 380px; height: 160px; left: -120px; top: 38%; }
+        #bg-table-right { width: 380px; height: 160px; right: -120px; top: 38%; }
+
+        /* 🔥 לובי משודרג */
+        #menu-container {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)); 
+            padding: 45px; border-radius: 24px; border: 3px solid #dc2626;
+            text-align: center; max-width: 450px; width: 90%; z-index: 500; 
+            box-shadow: 0 25px 60px rgba(0,0,0,0.85), 0 0 30px rgba(220, 38, 38, 0.2);
+            backdrop-filter: blur(10px); box-sizing: border-box;
+        }
+        .lobby-title {
+            color: #ffffff; font-size: 36px; margin: 0; font-weight: 800; letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(220, 38, 38, 0.6);
+        }
+        .lobby-subtitle { color: #9ca3af; font-size: 14px; margin-top: 5px; margin-bottom: 35px; }
+        .menu-btn {
+            display: flex; align-items: center; justify-content: center; width: 100%; padding: 18px; margin: 18px 0; 
+            font-size: 18px; font-weight: bold; border-radius: 35px; border: none; cursor: pointer; 
+            transition: all 0.3s ease; color: white; box-shadow: 0 8px 20px rgba(0,0,0,0.4); box-sizing: border-box;
+        }
+        .btn-online { background: linear-gradient(135deg, #ef4444, #b91c1c); border: 1px solid #f87171; }
+        .btn-online:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(239, 68, 68, 0.4); }
+        .btn-friends { background: linear-gradient(135deg, #10b981, #047857); border: 1px solid #34d399; }
+        .btn-friends:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(16, 185, 129, 0.4); }
+
+        /* 🃏 זירת המשחק המרכזית */
+        #main-game { display: none; flex-direction: column; align-items: center; width: 100%; height: 100%; justify-content: center; z-index: 10; }
+        
+        /* כפתור חזרה ללובי */
+        .lobby-back-btn {
+            position: absolute; top: 20px; left: 20px; z-index: 999; background: rgba(30, 41, 59, 0.85);
+            border: 2px solid #ef4444; color: white; padding: 10px 18px; border-radius: 20px;
+            font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .lobby-back-btn:hover { background: #ef4444; transform: scale(1.05); }
+
+        #table-container-scale { display: flex; justify-content: center; align-items: center; width: 100%; }
+        #table-3d-wrapper { transform: rotateX(58deg) rotateZ(-3deg); transform-style: preserve-3d; position: relative; width: 880px; height: 390px; margin-bottom: 15px; }
+        
+        #poker-table { 
+            position: absolute; width: 100%; height: 100%; 
+            background: radial-gradient(circle, #0f766e 40%, #064e3b 80%, #022c22); 
+            border: 20px solid #451a03; border-radius: 50% / 50%; 
+            box-shadow: 0 0 60px rgba(0,0,0,0.95), inset 0 0 40px rgba(0,0,0,0.7); 
+            box-sizing: border-box; transform: translateZ(30px); 
+        }
+        #table-3d-side { position: absolute; width: 100%; height: 100%; background: #1c1917; border-radius: 50% / 50%; box-shadow: 0 45px 60px rgba(0,0,0,0.95); transform: translateZ(0px); }
+
+        /* כיסאות אדום קטיפה */
+        .casino-chair { position: absolute; width: 120px; height: 150px; background: linear-gradient(to bottom, #991b1b, #450a0a); border: 4px solid #ef4444; border-radius: 25px 25px 10px 10px; box-shadow: 0 25px 30px rgba(0,0,0,0.9); transform: rotateZ(3deg) rotateX(-58deg) translateZ(45px); z-index: 5; }
+        #chair-0 { bottom: -140px; left: 377px; scale: 1.25; }
+        #chair-1 { top: 75px; left: -100px; scale: 1.05; }
+        #chair-2 { top: -160px; left: 377px; scale: 0.82; }
+        #chair-3 { top: 75px; right: -100px; scale: 1.05; }
+        
+        /* כרטיסי שחקנים */
+        .player { position: absolute; width: 110px; height: 145px; background: linear-gradient(135deg, #1f2937, #111827); border: 3px solid #ef4444; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; box-shadow: 0 12px 24px rgba(0,0,0,0.8); transform: rotateZ(3deg) rotateX(-58deg) translateZ(85px); z-index: 10; overflow: hidden; transition: all 0.4s ease; }
+        .player-header { width: 100%; text-align: center; font-size: 11px; font-weight: bold; background: rgba(0, 0, 0, 0.6); padding: 5px 0; border-bottom: 1px solid #ef4444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+        .player-img { width: 100%; height: 75px; object-fit: cover; border-bottom: 2px solid #ef4444; }
+        .player-footer { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; font-size: 11px; width: 100%; background: rgba(0,0,0,0.7); font-weight: bold; padding: 2px 0; }
+        
+        /* 🪙 תצוגת ז'יטונים (צ'יפים) */
+        .chips-visual { display: flex; gap: 2px; margin-top: 2px; }
+        .chip { width: 10px; height: 10px; border-radius: 50%; border: 1px dashed white; display: inline-block; }
+        .chip-red { background: #ef4444; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+        .chip-blue { background: #3b82f6; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+        .chip-green { background: #10b981; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+
+        /* 💬 בועות דיבור ותגובות */
+        .speech-bubble {
+            position: absolute; background: white; color: black; font-weight: bold; font-size: 12px;
+            padding: 8px 12px; border-radius: 15px; border: 2px solid #ef4444; width: 100px; text-align: center;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.5); transform: rotateZ(3deg) rotateX(-58deg) translateZ(240px);
+            z-index: 200; display: none; white-space: normal; word-wrap: break-word;
+        }
+        #bubble-0 { bottom: 50px; left: 392px; }
+        #bubble-1 { top: 220px; left: -90px; }
+        #bubble-2 { top: -20px; left: 392px; }
+        #bubble-3 { top: 220px; right: -90px; }
+
+        /* תפריט בחירת תגובות מהירות */
+        .taunt-menu {
+            position: absolute; bottom: 85px; background: #1e293b; border: 2px solid #10b981;
+            border-radius: 15px; padding: 10px; display: none; flex-direction: column; gap: 8px;
+            z-index: 800; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .taunt-btn {
+            background: #334155; color: white; border: none; padding: 8px 14px; font-size: 13px;
+            border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.2s; text-align: right;
+        }
+        .taunt-btn:hover { background: #10b981; }
+
+        /* טיימר */
+        .timer-bar { width: 90%; height: 4px; background: #27272a; margin-top: 3px; border-radius: 2px; overflow: hidden; }
+        .timer-progress { width: 100%; height: 100%; background: #10b981; transition: width 0.1s linear; }
+
+        #player-0 { bottom: -110px; left: 387px; border-color: #10b981; scale: 1.25; z-index: 100; } 
+        #player-1 { top: 90px; left: -90px; scale: 1.05; } 
+        #player-2 { top: -130px; left: 387px; scale: 0.82; }  
+        #player-3 { top: 90px; right: -90px; scale: 1.05; } 
+
+        .card-shroud { position: absolute; width: 120px; height: 82px; background: linear-gradient(135deg, #dc2626, #7f1d1d); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; color: white; cursor: pointer; z-index: 60; border: 1px solid white; text-align: center; padding: 5px; box-sizing: border-box; box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
+        #my-hand-container { position: absolute; bottom: 50px; left: 375px; display: flex; gap: 10px; z-index: 50; transform: translateZ(40px); }
+        
+        .pot-display { position: absolute; top: 100px; left: 375px; width: 130px; text-align: center; background: rgba(3, 7, 18, 0.95); padding: 10px; border-radius: 30px; font-weight: bold; font-size: 16px; border: 2px solid #10b981; transform: translateZ(40px); box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+        .community-cards { position: absolute; top: 165px; left: 255px; width: 370px; display: flex; justify-content: center; gap: 10px; transform: translateZ(40px); }
+        
+        .card { width: 55px; height: 82px; background: linear-gradient(to bottom, #ffffff, #f3f4f6); color: black; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 6px 0; font-weight: bold; font-size: 20px; box-shadow: 0 6px 12px rgba(0,0,0,0.6); box-sizing: border-box; border: 1px solid #d1d5db; }
+        .card .suit { font-size: 24px; }
+        .red { color: #dc2626; }
+        
+        .controls-wrapper { display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 600; width: 100%; margin-top: 5px; position: relative; }
+        .bet-panel { background: rgba(15, 23, 42, 0.95); padding: 10px 25px; border-radius: 20px; border: 2px solid #ef4444; display: flex; align-items: center; gap: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.6); }
+        .bet-panel input[type=range] { width: 180px; accent-color: #ef4444; cursor: pointer; }
+        .controls { display: flex; gap: 15px; }
+        
+        button.action-btn { padding: 13px 32px; font-size: 16px; font-weight: bold; cursor: pointer; border: none; border-radius: 30px; color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: all 0.2s; }
+        button.action-btn:hover:not(:disabled) { transform: scale(1.05); }
+        button.action-btn:disabled { background: #3f3f46 !important; color: #71717a; cursor: not-allowed; box-shadow: none; }
+        #log { font-size: 22px; color: #10b981; height: 28px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+
+        /* 📱 התאמות למובייל */
+        @media (max-width: 900px) {
+            #table-container-scale { transform: scale(0.44); margin-top: -50px; margin-bottom: -50px; }
+            #player-1, #chair-1 { left: -30px !important; }
+            #player-3, #chair-3 { right: -30px !important; }
+            #bubble-1 { left: -30px !important; }
+            #bubble-3 { right: -30px !important; }
+            
+            .controls-wrapper { width: 95%; gap: 8px; }
+            .bet-panel { padding: 8px 15px; gap: 8px; }
+            .bet-panel input[type=range] { width: 120px; }
+            .controls { gap: 8px; width: 100%; justify-content: center; }
+            button.action-btn { padding: 10px 14px; font-size: 13px; flex-grow: 1; max-width: 90px; text-align: center; border-radius: 15px; }
+            #log { font-size: 18px; }
+            .lobby-back-btn { top: 10px; left: 10px; padding: 6px 12px; font-size: 13px; }
+            .taunt-menu { bottom: 75px; }
+        }
     </style>
 </head>
 <body>
-    <h1>Poker 4D</h1>
-    <div id="player-balance">הכסף שלך: <span id="balance">1000</span>$</div>
-    <div id="game-area"></div>
-    <button onclick="newTable()">New Table</button>
+
+    <div class="casino-wall"></div>
+    <div class="casino-carpet"></div>
+
+    <div class="bg-table" id="bg-table-left"></div>
+    <div class="bg-table" id="bg-table-right"></div>
+
+    <!-- כפתור חזרה ללובי (יופיע רק בתוך המשחק) -->
+    <button id="btn-back-lobby" class="lobby-back-btn" onclick="backToLobby()" style="display: none;">🏠 Lobby</button>
+
+    <!-- לובי -->
+    <div id="menu-container">
+        <h1 class="lobby-title">POKERIST 4D</h1>
+        <div class="lobby-subtitle">VIP Texas Hold'em Club</div>
+        <button class="menu-btn btn-online" onclick="startGame('bots')">🏆 Join Online Table</button>
+        <button class="menu-btn btn-friends" onclick="startGame('friends')">👥 Play with Friends (Local Pass)</button>
+    </div>
+
+    <!-- מסך משחק -->
+    <div id="main-game">
+        <div id="table-container-scale">
+            <div id="table-3d-wrapper">
+                <div class="casino-chair" id="chair-2"></div>
+                <div class="casino-chair" id="chair-1"></div>
+                <div class="casino-chair" id="chair-3"></div>
+                <div class="casino-chair" id="chair-0"></div>
+
+                <div id="table-3d-side"></div>
+                <div id="poker-table"></div>
+                
+                <!-- בועות דיבור לתגובות מהירות -->
+                <div class="speech-bubble" id="bubble-0"></div>
+                <div class="speech-bubble" id="bubble-1"></div>
+                <div class="speech-bubble" id="bubble-2"></div>
+                <div class="speech-bubble" id="bubble-3"></div>
+
+                <div class="pot-display">POT: $<span id="pot-amount">0</span></div>
+                <div class="community-cards" id="community-cards"></div>
+                <div id="my-hand-container"></div>
+
+                <div class="player" id="player-0">
+                    <div class="player-header" id="p0-name">You</div>
+                    <img class="player-img" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80">
+                    <div class="player-footer">
+                        <span id="p0-money">$1000</span>
+                        <div class="chips-visual" id="chips-0"></div>
+                        <div class="timer-bar"><div class="timer-progress" id="timer-0"></div></div>
+                    </div>
+                </div>
+                <div class="player" id="player-1">
+                    <div class="player-header" id="p1-name">ProKiller99</div>
+                    <img class="player-img" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80">
+                    <div class="player-footer">
+                        <span id="p1-money">$1000</span>
+                        <div class="chips-visual" id="chips-1"></div>
+                        <div class="timer-bar"><div class="timer-progress" id="timer-1"></div></div>
+                    </div>
+                </div>
+                <div class="player" id="player-2">
+                    <div class="player-header" id="p2-name">AceMaster</div>
+                    <img class="player-img" src="https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80">
+                    <div class="player-footer">
+                        <span id="p2-money">$1000</span>
+                        <div class="chips-visual" id="chips-2"></div>
+                        <div class="timer-bar"><div class="timer-progress" id="timer-2"></div></div>
+                    </div>
+                </div>
+                <div class="player" id="player-3">
+                    <div class="player-header" id="p3-name">BluffKing_IL</div>
+                    <img class="player-img" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80">
+                    <div class="player-footer">
+                        <span id="p3-money">$1000</span>
+                        <div class="chips-visual" id="chips-3"></div>
+                        <div class="timer-bar"><div class="timer-progress" id="timer-3"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-wrapper">
+            <!-- תפריט תגובות מהירות -->
+            <div class="taunt-menu" id="taunt-picker">
+                <button class="taunt-btn" onclick="sendTaunt('יד טובה! 👍')">יד טובה! 👍</button>
+                <button class="taunt-btn" onclick="sendTaunt('אתה מבלף? 🤔')">אתה מבלף? 🤔</button>
+                <button class="taunt-btn" onclick="sendTaunt('עוד משחק! 🃏')">עוד משחק! 🃏</button>
+                <button class="taunt-btn" onclick="sendTaunt('אני הולך אול-אין! 🔥')">אני הולך אול-אין! 🔥</button>
+            </div>
+
+            <div class="bet-panel">
+                <span style="font-weight:bold; color:#fff;">Bet:</span>
+                <input type="range" id="bet-slider" min="10" max="500" step="10" value="50" oninput="document.getElementById('bet-display-val').innerText = this.value">
+                <span style="font-weight:bold; color:#10b981;">$<span id="bet-display-val">50</span></span>
+            </div>
+
+            <div class="controls">
+                <button id="btn-fold" class="action-btn" onclick="playerAction('fold')" style="background: linear-gradient(#ef4444, #991b1b);">Fold</button>
+                <button id="btn-check" class="action-btn" onclick="playerAction('check')" style="background: linear-gradient(#4b5563, #1f2937);">Check</button>
+                <button id="btn-raise" class="action-btn" onclick="playerAction('raise')" style="background: linear-gradient(#10b981, #065f46);">Raise</button>
+                <button id="btn-taunt" class="action-btn" onclick="toggleTauntMenu()" style="background: linear-gradient(#a855f7, #6b21a8);">💬 Taunt</button>
+                <button id="btn-next" class="action-btn" onclick="nextRound()" style="background: linear-gradient(#3b82f6, #1d4ed8); display:none;">Next</button>
+            </div>
+            <div id="log">Loading casino floor...</div>
+        </div>
+    </div>
 
     <script>
-        let balance = parseInt(localStorage.getItem('pokerBalance')) || 1000;
-        document.getElementById('balance').innerText = balance;
-
-        const names = ["אבי", "בני", "גדי", "דני", "יוסי", "אלי", "רוני", "קובי", "משה", "חיים", "שי", "יניב", "ערן", "טל", "גל"];
+        const suits = ['S', 'H', 'D', 'C'];
+        const values = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+        let deck = [], pot = 0, gameStage = 0, gameMode = 'bots', currentPlayerIndex = 0, cardsRevealed = false;
+        let turnTimer = null, timeLeft = 15;
         
-        function getRandomName() { return names[Math.floor(Math.random() * names.length)] + (Math.floor(Math.random() * 999)); }
+        let players = [
+            { id: 0, name: "You", money: 1000, cards: [], folded: false },
+            { id: 1, name: "ProKiller99", money: 1000, cards: [], folded: false },
+            { id: 2, name: "AceMaster", money: 1000, cards: [], folded: false },
+            { id: 3, name: "BluffKing_IL", money: 1000, cards: [], folded: false }
+        ];
 
-        function newTable() {
-            let area = document.getElementById('game-area');
-            area.innerHTML = "<h3>שחקנים בשולחן:</h3>";
-            for(let i=0; i<4; i++) {
-                let money = Math.floor(Math.random() * (1500 - 500 + 1)) + 500;
-                area.innerHTML += `<div class='chip'>${getRandomName()} (${money}$)</div>`;
+        function startGame(mode) {
+            gameMode = mode;
+            document.getElementById('menu-container').style.display = 'none';
+            document.getElementById('main-game').style.display = 'flex';
+            document.getElementById('btn-back-lobby').style.display = 'block'; // מציג כפתור לובי
+            if (gameMode === 'friends') {
+                players[0].name = "Player 1"; document.getElementById('p0-name').innerText = "Player 1";
+                players[1].name = "Player 2"; document.getElementById('p1-name').innerText = "Player 2";
+                players[2].name = "Player 3"; document.getElementById('p2-name').innerText = "Player 3";
+                players[3].name = "Player 4"; document.getElementById('p3-name').innerText = "Player 4";
             }
-            area.innerHTML += `<br><br><button onclick="winGame()">נצח סיבוב</button>`;
+            startNewHand();
         }
 
-        function winGame() {
-            balance += 500;
-            localStorage.setItem('pokerBalance', balance);
-            document.getElementById('balance').innerText = balance;
-            alert("ניצחת! עובר לשולחן הבא...");
-            newTable();
+        function backToLobby() {
+            clearInterval(turnTimer);
+            document.getElementById('menu-container').style.display = 'block';
+            document.getElementById('main-game').style.display = 'none';
+            document.getElementById('btn-back-lobby').style.display = 'none';
+            // איפוס כספים ראשוני למניעת שגיאות
+            players.forEach(p => { p.money = 1000; p.folded = false; });
         }
 
-        newTable();
+        function createDeck() {
+            deck = [];
+            for (let suit of suits) { for (let val of values) { deck.push({ val, suit, isRed: suit === 'H' || suit === 'D' }); } }
+            deck.sort(() => Math.random() - 0.5);
+        }
+
+        function renderCardHTML(card) {
+            let visualSuit = card.suit === 'S' ? '&#9824;' : card.suit === 'H' ? '&#9829;' : card.suit === 'D' ? '&#9830;' : '&#9827;';
+            return `<div class="card ${card.isRed ? 'red' : ''}"><div>${card.val}</div><div class="suit">${visualSuit}</div></div>`;
+        }
+
+        function renderChips(index, money) {
+            let container = document.getElementById(`chips-${index}`);
+            let chipCount = Math.min(5, Math.ceil(money / 200)); // מקסימום 5 צ'יפים ויזואליים שלא יציפו
+            let html = '';
+            let colors = ['chip-red', 'chip-blue', 'chip-green'];
+            let colorClass = colors[index % colors.length];
+            for(let i=0; i<chipCount; i++) {
+                html += `<span class="chip ${colorClass}"></span>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function startNewHand() {
+            clearInterval(turnTimer);
+            createDeck(); pot = 0; gameStage = 0; currentPlayerIndex = 0; cardsRevealed = false;
+            document.getElementById('community-cards').innerHTML = '';
+            document.getElementById('btn-next').style.display = 'none';
+            
+            players.forEach((p, index) => {
+                p.folded = false; p.cards = [deck.pop(), deck.pop()]; p.money -= 20; pot += 20;
+                document.getElementById(`p${index}-money`).innerText = `$${p.money}`;
+                renderChips(index, p.money);
+                document.getElementById(`player-${index}`).style.opacity = '1';
+                document.getElementById(`timer-${index}`).style.width = '100%';
+                document.getElementById(`timer-${index}`).style.background = '#10b981';
+            });
+            updateUI(); setupTurn();
+        }
+
+        function startCountdown() {
+            clearInterval(turnTimer);
+            timeLeft = 15;
+            let activeId = currentPlayerIndex;
+            
+            players.forEach((p, idx) => { if(idx !== activeId) document.getElementById(`timer-${idx}`).style.width = '0%'; });
+
+            turnTimer = setInterval(() => {
+                timeLeft -= 0.1;
+                let percentage = (timeLeft / 15) * 100;
+                let element = document.getElementById(`timer-${activeId}`);
+                if (element) {
+                    element.style.width = `${percentage}%`;
+                    if (timeLeft < 4) element.style.background = '#ef4444';
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(turnTimer);
+                    logMessage(`${players[activeId].name} ran out of time!`);
+                    forceFold();
+                }
+            }, 100);
+        }
+
+        function forceFold() {
+            let p = players[currentPlayerIndex];
+            p.folded = true; document.getElementById(`player-${currentPlayerIndex}`).style.opacity = '0.3';
+            cardsRevealed = false;
+            updateUI(); setTimeout(moveToNextPlayer, 500);
+        }
+
+        function setupTurn() {
+            if (players[currentPlayerIndex].folded) { moveToNextPlayer(); return; }
+            
+            let activePlayer = players[currentPlayerIndex];
+            let slider = document.getElementById('bet-slider');
+            slider.max = activePlayer.money;
+            slider.value = Math.min(50, activePlayer.money);
+            document.getElementById('bet-display-val').innerText = slider.value;
+
+            startCountdown();
+
+            if (gameMode === 'bots' && currentPlayerIndex > 0) {
+                setControlsEnabled(false);
+                logMessage(`${activePlayer.name} is thinking...`);
+                
+                // בוט לפעמים יגיב בצ'אט
+                if(Math.random() < 0.25) {
+                    setTimeout(() => {
+                        let botTaunts = ['יד טובה! 👍', 'אתה מבלף? 🤔', 'עוד משחק! 🃏'];
+                        showBubble(currentPlayerIndex, botTaunts[Math.floor(Math.random() * botTaunts.length)]);
+                    }, 800);
+                }
+
+                let randomThinkingTime = Math.floor(Math.random() * 2000) + 2000; 
+                setTimeout(runSingleBotTurn, randomThinkingTime);
+                return;
+            }
+
+            setControlsEnabled(true);
+            let container = document.getElementById('my-hand-container');
+            players.forEach((p, idx) => { document.getElementById(`player-${idx}`).style.borderColor = (idx === currentPlayerIndex) ? '#10b981' : '#ef4444'; });
+
+            if (gameMode === 'friends' && !cardsRevealed) {
+                container.innerHTML = `<div class="card-shroud" onclick="revealCards()">${players[currentPlayerIndex].name}<br>Tap to Show</div>`;
+                document.getElementById('btn-fold').disabled = true;
+                document.getElementById('btn-check').disabled = true;
+                document.getElementById('btn-raise').disabled = true;
+                logMessage("It is " + players[currentPlayerIndex].name + "'s turn.");
+            } else {
+                container.innerHTML = renderCardHTML(activePlayer.cards[0]) + renderCardHTML(activePlayer.cards[1]);
+                logMessage(`${activePlayer.name}, your turn!`);
+            }
+        }
+
+        function revealCards() { cardsRevealed = true; setupTurn(); }
+
+        function toggleTauntMenu() {
+            let menu = document.getElementById('taunt-picker');
+            menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        function sendTaunt(text) {
+            showBubble(currentPlayerIndex, text);
+            document.getElementById('taunt-picker').style.display = 'none';
+        }
+
+        function showBubble(index, text) {
+            let bubble = document.getElementById(`bubble-${index}`);
+            bubble.innerText = text;
+            bubble.style.display = 'block';
+            setTimeout(() => { bubble.style.display = 'none'; }, 2500);
+        }
+
+        function playerAction(action) {
+            clearInterval(turnTimer);
+            let p = players[currentPlayerIndex];
+            let chosenBet = parseInt(document.getElementById('bet-slider').value);
+            cardsRevealed = false;
+
+            if (action === 'fold') {
+                p.folded = true; document.getElementById(`player-${currentPlayerIndex}`).style.opacity = '0.3';
+                logMessage(`${p.name} Folded.`);
+            } else if (action === 'check') {
+                logMessage(`${p.name} Checked.`);
+            } else if (action === 'raise') {
+                p.money -= chosenBet; pot += chosenBet;
+                document.getElementById(`p${currentPlayerIndex}-money`).innerText = `$${p.money}`;
+                renderChips(currentPlayerIndex, p.money);
+                logMessage(`${p.name} Raised $${chosenBet}!`);
+            }
+            updateUI(); setTimeout(moveToNextPlayer, 500);
+        }
+
+        function runSingleBotTurn() {
+            clearInterval(turnTimer);
+            let bot = players[currentPlayerIndex];
+            if (Math.random() < 0.15 && gameStage > 0) {
+                bot.folded = true; document.getElementById(`player-${currentPlayerIndex}`).style.opacity = '0.3';
+                logMessage(`${bot.name} Folded.`);
+            } else {
+                let botBet = Math.random() < 0.3 ? 40 : 20;
+                botBet = Math.min(botBet, bot.money);
+                bot.money -= botBet; pot += botBet;
+                document.getElementById(`p${currentPlayerIndex}-money`).innerText = `$${bot.money}`;
+                renderChips(currentPlayerIndex, bot.money);
+                logMessage(`${bot.name} Called.`);
+            }
+            updateUI(); setTimeout(moveToNextPlayer, 500);
+        }
+
+        function moveToNextPlayer() {
+            currentPlayerIndex++;
+            if (currentPlayerIndex >= players.length) { currentPlayerIndex = 0; advanceGameStage(); } 
+            else { setupTurn(); }
+        }
+
+        function advanceGameStage() {
+            gameStage++;
+            let activePlayers = players.filter(p => !p.folded);
+            if (activePlayers.length === 1) { determineWinner(activePlayers[0]); return; }
+
+            if (gameStage === 1) { logMessage("The Flop!"); dealCommunityCards(3); setupTurn(); } 
+            else if (gameStage === 2) { logMessage("The Turn!"); dealCommunityCards(1); setupTurn(); } 
+            else if (gameStage === 3) { logMessage("The River!"); dealCommunityCards(1); setupTurn(); } 
+            else if (gameStage === 4) { determineWinner(activePlayers[Math.floor(Math.random() * activePlayers.length)]); }
+        }
+
+        function dealCommunityCards(amount) {
+            let container = document.getElementById('community-cards');
+            for(let i=0; i<amount; i++) { container.innerHTML += renderCardHTML(deck.pop()); }
+        }
+
+        function determineWinner(winner) {
+            clearInterval(turnTimer);
+            setControlsEnabled(false); winner.money += pot;
+            document.getElementById(`p${winner.id}-money`).innerText = `$${winner.money}`;
+            renderChips(winner.id, winner.money);
+            logMessage(`${winner.name} WINS $${pot}!`);
+            document.getElementById('btn-next').style.display = 'inline-block';
+        }
+
+        function nextRound() { startNewHand(); }
+        function updateUI() { document.getElementById('pot-amount').innerText = pot; }
+        function logMessage(msg) { document.getElementById('log').innerText = msg; }
+        function setControlsEnabled(enabled) {
+            document.getElementById('btn-fold').disabled = !enabled;
+            document.getElementById('btn-check').disabled = !enabled;
+            document.getElementById('btn-raise').disabled = !enabled;
+            document.getElementById('bet-slider').disabled = !enabled;
+        }
     </script>
 </body>
 </html>
